@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
+import dts from 'vite-plugin-dts'
+
 import { name as packageName } from './package.json'
 
 export default defineConfig({
@@ -15,4 +17,5 @@ export default defineConfig({
     },
     emptyOutDir: true,
   },
+  plugins: [dts()],
 })
