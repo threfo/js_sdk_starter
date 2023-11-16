@@ -97,7 +97,7 @@ jobs:
           region: ${{ secrets.OSS_REGION }}
 
       - name: 刷新cnd
-        uses: threfo/tencentclound@main
+        uses: threfo/tencentclound-cdn@main
         with:
           urls: ${{env.OSS_URLS_STR}}
           secret_id: ${{ secrets.OSS_SECRET_ID }}
