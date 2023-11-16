@@ -39,17 +39,14 @@ jobs:
         run: pnpm run build
 
       - name: Get files
+        shell: bash
         run: |
           # 指定文件夹路径
           folder_path="./packages/code/dist"
           echo "FOLDER_PATH=$folder_path"
 
-          echo "env.FOLDER_PATH: ${{env.FOLDER_PATH}}"
-
           cos_url_path="/libs/js_sdk_starter/code"
           echo "COS_URL_PATH=$cos_url_path"
-
-          echo "env.COS_URL_PATH: ${{env.COS_URL_PATH}}"
 
           # 前缀
           pre_str="https://assets.belloai.com$cos_url_path/laster"
@@ -76,8 +73,6 @@ jobs:
           echo "拼接后的字符串: $joined_string"
 
           echo "OSS_URLS_STR=$joined_string"
-
-          echo "env.OSS_URLS_STR: ${{env.OSS_URLS_STR}}"
 
       - name: 上传到腾讯云COS
         uses: zkqiang/tencent-cos-action@v0.1.0
@@ -108,11 +103,11 @@ jobs:
         uses: threfo/work-wechat-msg@main
         with:
           botKey: ${{ secrets.WORK_WECHAT_GITHUB_ROBOT_KEY }}
-          content: 🎉 项目${{ github.repository }}，分支${{ github.ref_name }}, ${{ github.ref }} 的 js_sdk_starter/code CD构建成功，上传到/libs/js_sdk_starter/code/laster/ --- Github Actions
+          content: 🎉 项目${{ github.repository }}，分支${{ github.ref_name }}, ${{env.COS_URL_PATH}} CD构建成功，上传到 ${{env.COS_URL_PATH}}/laster/ --- Github Actions
 
       - name: 构建失败消息
         if: ${{ failure() }}
         uses: threfo/work-wechat-msg@main
         with:
           botKey: ${{ secrets.WORK_WECHAT_GITHUB_ROBOT_KEY }}
-          content: ❌ 项目${{ github.repository }}，分支${{ github.ref_name }}, ${{ github.ref }} 的 js_sdk_starter/code CD失败。--- Github Actions
+          content: ❌ 项目${{ github.repository }}，分支${{ github.ref_name }}, ${{env.COS_URL_PATH}} CD失败。--- Github Actions
