@@ -1,8 +1,17 @@
 name: CI
 on:
-  - push
-  - pull_request
-
+  push:
+    paths-ignore:
+      - 'api/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '**/**.md'
+  pull_request:
+    paths-ignore:
+      - 'api/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '**/**.md'
 jobs:
   cache-and-install:
     runs-on: ubuntu-latest
