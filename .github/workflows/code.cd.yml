@@ -46,7 +46,7 @@ jobs:
       - name: 上传到腾讯云COS
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload -rs .packages/code/dist/ /libs/js_sdk_starter/code/laster/
+          args: upload -rs ./packages/code/dist/ /libs/js_sdk_starter/code/laster/
           secret_id: ${{ secrets.OSS_SECRET_ID }}
           secret_key: ${{ secrets.OSS_SECRET_KEY }}
           bucket: ${{ secrets.OSS_ASSETS_BUCKET }}
@@ -54,7 +54,7 @@ jobs:
       - name: 上传到腾讯云COS到历史版本
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload -rs .packages/code/dist/ /libs/js_sdk_starter/code/${{steps.get-tag-name.outputs.ref_tag_name}}/
+          args: upload -rs ./packages/code/dist/ /libs/js_sdk_starter/code/${{steps.get-tag-name.outputs.ref_tag_name}}/
           secret_id: ${{ secrets.OSS_SECRET_ID }}
           secret_key: ${{ secrets.OSS_SECRET_KEY }}
           bucket: ${{ secrets.OSS_ASSETS_BUCKET }}
