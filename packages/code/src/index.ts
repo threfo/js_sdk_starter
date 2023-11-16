@@ -18,7 +18,7 @@ export const plus1 = (a: number) => {
 
 if (import.meta.vitest) {
   const { it, expect } = import.meta.vitest
-  it.only('test plus1', () => {
+  it('test plus1', () => {
     expect(plus1(1)).toBe(2)
   })
 }
