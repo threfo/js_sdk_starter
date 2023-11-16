@@ -1,0 +1,66 @@
+name: Code CD
+on:
+  release:
+    types: [created]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: pnpm/action-setup@v2.0.1
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          version: 8.6.0
+          run_install: false
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Install dependencies
+        run: pnpm -v && pnpm install --no-frozen-lockfile
+      - name: Build
+        run: pnpm run build
+
+      - name: Get tag name
+        id: get-tag-name
+        run: |
+          echo "::set-output name=ref_tag_name::${${{env.GITHUB_REF}}##*/}"
+
+      - name: 上传到腾讯云COS
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload -rs .packages/code/dist/ /libs/js_sdk_starter/code/laster/
+          secret_id: ${{ secrets.OSS_SECRET_ID }}
+          secret_key: ${{ secrets.OSS_SECRET_KEY }}
+          bucket: ${{ secrets.OSS_ASSETS_BUCKET }}
+          region: ${{ secrets.OSS_REGION }}
+      - name: 上传到腾讯云COS到历史版本
+        uses: zkqiang/tencent-cos-action@v0.1.0
+        with:
+          args: upload -rs .packages/code/dist/ /libs/js_sdk_starter/code/${{steps.get-tag-name.outputs.ref_tag_name}}/
+          secret_id: ${{ secrets.OSS_SECRET_ID }}
+          secret_key: ${{ secrets.OSS_SECRET_KEY }}
+          bucket: ${{ secrets.OSS_ASSETS_BUCKET }}
+          region: ${{ secrets.OSS_REGION }}
+      - name: 构建成功消息
+        if: ${{ success() }}
+        uses: threfo/work-wechat-msg@main
+        with:
+          botKey: ${{ secrets.WORK_WECHAT_GITHUB_ROBOT_KEY }}
+          content: 🎉 项目${{ env.GITHUB_REPOSITORY }}，分支${{ env.GITHUB_REF_NAME }}, ${{ env.GITHUB_REF }} 的 js_sdk_starter/code CD构建成功，上传到/libs/js_sdk_starter/code/laster/ --- Github Actions
+
+      - name: 构建失败消息
+        if: ${{ failure() }}
+        uses: threfo/work-wechat-msg@main
+        with:
+          botKey: ${{ secrets.WORK_WECHAT_GITHUB_ROBOT_KEY }}
+          content: ❌ 项目${{ env.GITHUB_REPOSITORY }}，分支${{ env.GITHUB_REF_NAME }}, ${{ env.GITHUB_REF }} 的 js_sdk_starter/code CD失败。--- Github Actions
