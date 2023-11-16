@@ -11,28 +11,33 @@ jobs:
     steps:
       - uses: pnpm/action-setup@v2.0.1
         name: Install pnpm
-        id: pnpm-install
         with:
           version: 8.6.0
           run_install: false
+
       - name: Get pnpm store directory
-        id: pnpm-cache
+        shell: bash
         run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
       - uses: actions/cache@v3
         name: Setup pnpm cache
         with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
-        run: pnpm -v && pnpm install --no-frozen-lockfile
+        run: |
+          pnpm install --no-frozen-lockfile
+
       - name: Build
         run: pnpm run build
+
       - name: 构建失败消息
         if: ${{ failure() }}
         uses: threfo/work-wechat-msg@main
         with:
           botKey: ${{ secrets.WORK_WECHAT_GITHUB_ROBOT_KEY }}
-          content: ❌ 项目${{ env.GITHUB_REPOSITORY }}，分支${{ env.GITHUB_REF_NAME }}, ${{ env.GITHUB_REF }}CI失败。--- Github Actions
+          content: ❌ 项目${{ github.repository }}，分支${{ github.ref_name}}, ${{ github.ref }}CI失败。--- Github Actions
