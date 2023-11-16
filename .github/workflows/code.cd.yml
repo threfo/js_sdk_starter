@@ -38,15 +38,51 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Get tag name
-        id: get-tag-name
+      - name: Get files
         run: |
-          echo "::set-output name=ref_tag_name::${${{github.ref}}##*/}"
+          # 指定文件夹路径
+          folder_path="./packages/code/dist"
+          echo "FOLDER_PATH=$folder_path"
+
+          echo "env.FOLDER_PATH: ${{env.FOLDER_PATH}}"
+
+          cos_url_path="/libs/js_sdk_starter/code"
+          echo "COS_URL_PATH=$cos_url_path"
+
+          echo "env.COS_URL_PATH: ${{env.COS_URL_PATH}}"
+
+          # 前缀
+          pre_str="https://assets.belloai.com$cos_url_path/laster"
+
+          # 使用find命令查找文件夹及其子文件夹中的所有文件
+          file_list=$(find "$folder_path" -type f)
+
+          # 将文件列表转换为字符串数组
+          IFS=$'\n' read -rd '' -a file_array <<< "$file_list"
+
+          # 输出文件数组
+          echo "文件数组: ${file_array[@]}"
+
+          # 对file_array数组进行处理，把folder_path部分替换成pre_str
+          for i in "${!file_array[@]}"; do
+              file_array[$i]=${file_array[$i]/#"$folder_path"/"$pre_str"}
+          done
+
+          # 输出处理后的文件数组
+          echo "处理后的文件数组: ${file_array[@]}"
+
+          # 把file_array数组用';'拼接成一个字符串
+          joined_string=$(IFS=$';'; echo "${file_array[*]}")
+          echo "拼接后的字符串: $joined_string"
+
+          echo "OSS_URLS_STR=$joined_string"
+
+          echo "env.OSS_URLS_STR: ${{env.OSS_URLS_STR}}"
 
       - name: 上传到腾讯云COS
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload -rs ./packages/code/dist/ /libs/js_sdk_starter/code/laster/
+          args: upload -rs ${{env.FOLDER_PATH}}/ ${{env.COS_URL_PATH}}/laster/
           secret_id: ${{ secrets.OSS_SECRET_ID }}
           secret_key: ${{ secrets.OSS_SECRET_KEY }}
           bucket: ${{ secrets.OSS_ASSETS_BUCKET }}
@@ -54,11 +90,19 @@ jobs:
       - name: 上传到腾讯云COS到历史版本
         uses: zkqiang/tencent-cos-action@v0.1.0
         with:
-          args: upload -rs ./packages/code/dist/ /libs/js_sdk_starter/code/${{steps.get-tag-name.outputs.ref_tag_name}}/
+          args: upload -rs ${{env.FOLDER_PATH}}/ ${{env.COS_URL_PATH}}/${{github.ref_name}}/
           secret_id: ${{ secrets.OSS_SECRET_ID }}
           secret_key: ${{ secrets.OSS_SECRET_KEY }}
           bucket: ${{ secrets.OSS_ASSETS_BUCKET }}
           region: ${{ secrets.OSS_REGION }}
+
+      - name: 刷新cnd
+        uses: threfo/tencentclound@main
+        with:
+          urls: ${{env.OSS_URLS_STR}}
+          secret_id: ${{ secrets.OSS_SECRET_ID }}
+          secret_key: ${{ secrets.OSS_SECRET_KEY }}
+
       - name: 构建成功消息
         if: ${{ success() }}
         uses: threfo/work-wechat-msg@main
